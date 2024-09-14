@@ -62,9 +62,6 @@
                 const historicalData = historicalPrices.map(item => item.price);
                 const predictedData = predictions.map(item => item.price);
 
-                // Create a combined data set for the chart
-                const allData = historicalData.concat(predictedData);
-
                 // Create the chart
                 const ctx = document.getElementById('goldPriceChart').getContext('2d');
                 const chart = new Chart(ctx, {
@@ -74,7 +71,7 @@
                         datasets: [
                             {
                                 label: 'Historical Gold Price (USD)',
-                                data: historicalData,
+                                data: historicalPrices.map(item => ({ x: item.date, y: item.price })),
                                 borderColor: 'rgba(75, 192, 192, 1)',
                                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                                 borderWidth: 1,
@@ -83,7 +80,7 @@
                             },
                             {
                                 label: 'Predicted Gold Price (USD)',
-                                data: predictedData,
+                                data: predictions.map(item => ({ x: item.date, y: item.price })),
                                 borderColor: 'rgba(255, 99, 132, 1)',
                                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                                 borderWidth: 1,
@@ -96,7 +93,10 @@
                         responsive: true,
                         scales: {
                             x: {
-                                display: true,
+                                type: 'time',
+                                time: {
+                                    unit: 'day'
+                                },
                                 title: {
                                     display: true,
                                     text: 'Date'
