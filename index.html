@@ -3,108 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Price Predictions</title>
+    <title>Gold Price Predictor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
+            margin: 20px;
         }
-        #myChart {
+        #chart-container {
             width: 80%;
-            max-width: 700px;
             margin: auto;
-        }
-        #loading {
-            display: none;
-            font-size: 20px;
-            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Gold Price Predictions</h1>
-    <canvas id="myChart"></canvas>
-    <div id="loading">Loading data...</div>
+    <h1>Gold Price Predictor</h1>
+    <div id="chart-container">
+        <canvas id="goldPriceChart"></canvas>
+    </div>
 
     <script>
-        const ctx = document.getElementById('myChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'line', // Line chart for price predictions
-            data: {
-                labels: [], // Dates go here
-                datasets: [{
-                    label: 'Gold Price (USD)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    data: [] // Price predictions go here
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: { display: true, title: { display: true, text: 'Date' } },
-                    y: { display: true, title: { display: true, text: 'Price (USD)' } }
-                },
-                plugins: {
-                    zoom: {
-                        pan: {
-                            enabled: true,
-                            mode: 'xy'
+        // Fetch data from the API and create the chart
+        async function fetchAndDisplayData() {
+            try {
+                // Fetch data from your Flask API
+                const response = await fetch('http://kiarashyz.pythonanywhere.com/api/get_predictions');
+                const data = await response.json();
+
+                // Check if there is an error in the response
+                if (data.error) {
+                    console.error('Error fetching data:', data.error);
+                    return;
+                }
+
+                // Extract historical prices and predictions
+                const historicalPrices = data.historical_prices;
+                const predictions = data.predictions;
+
+                // Prepare data for the chart
+                const labels = historicalPrices.map(item => item.date).concat(predictions.map(item => item.date));
+                const historicalData = historicalPrices.map(item => item.price);
+                const predictedData = predictions.map(item => item.price);
+
+                // Create a combined data set for the chart
+                const allData = historicalData.concat(predictedData);
+
+                // Create the chart
+                const ctx = document.getElementById('goldPriceChart').getContext('2d');
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Gold Price (USD)',
+                            data: allData,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderWidth: 1,
+                            fill: true,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                display: true,
+                                title: {
+                                    display: true,
+                                    text: 'Price (USD)'
+                                }
+                            }
                         },
-                        zoom: {
-                            wheel: {
-                                enabled: true // Enable zooming with the mouse wheel
-                            },
-                            pinch: {
-                                enabled: true // Enable pinch zooming for touch devices
-                            },
-                            mode: 'xy'
+                        plugins: {
+                            zoom: {
+                                pan: {
+                                    enabled: true,
+                                    mode: 'xy'
+                                },
+                                zoom: {
+                                    wheel: {
+                                        enabled: true
+                                    },
+                                    pinch: {
+                                        enabled: true
+                                    },
+                                    mode: 'xy'
+                                }
+                            }
                         }
                     }
-                }
+                });
+            } catch (error) {
+                console.error('Error fetching or displaying data:', error);
             }
-        });
-
-        // Function to update the chart with new data
-        function updateChart(dates, prices) {
-            chart.data.labels = dates;
-            chart.data.datasets[0].data = prices;
-            chart.update();
         }
 
-        // Show loading indicator
-        document.getElementById('loading').style.display = 'block';
-
-        // Fetch daily prices from Alpha Vantage
-        fetch('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=GC=F&apikey=ZJNI28UNJFXAOLXU')
-            .then(response => response.json())
-            .then(data => {
-                // Log the entire response for debugging
-                console.log(data);
-
-                // Check if the response contains the expected data
-                if (data['Time Series (Daily)']) {
-                    const timeSeries = data['Time Series (Daily)'];
-                    const dates = Object.keys(timeSeries).slice(0, 7).reverse(); // Get the last 7 dates
-                    const prices = dates.map(date => parseFloat(timeSeries[date]['4. close']));
-
-                    // Update the chart
-                    updateChart(dates, prices);
-
-                    // Hide loading indicator
-                    document.getElementById('loading').style.display = 'none';
-                } else {
-                    // Handle error case when data is not as expected
-                    console.error('Unexpected data format:', data);
-                    document.getElementById('loading').textContent = 'Failed to load recent prices';
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching gold prices:', error);
-                document.getElementById('loading').textContent = 'Failed to load recent prices';
-            });
+        // Load the chart data when the page loads
+        window.onload = fetchAndDisplayData;
     </script>
 </body>
 </html>
