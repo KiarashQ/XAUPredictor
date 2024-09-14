@@ -87,35 +87,31 @@
                 const predictionDates = data.map(item => item.date.split(' ')[0]);
                 const predictionPrices = data.map(item => item.price);
 
-                // Fetch one month of recent gold prices from an API (e.g., Yahoo Finance) and combine with prediction data
-                fetch('https://query1.finance.yahoo.com/v7/finance/download/GC=F?period1=1672531200&period2=' + Math.floor(Date.now() / 1000) + '&interval=1d&events=history')
-                    .then(response => response.text())
-                    .then(csv => {
-                        const rows = csv.split('\n').slice(1); // Remove header
-                        const recentDates = [];
-                        const recentPrices = [];
+                // Hardcoded recent prices (use this for testing)
+                const recentDates = [
+                    '2024-08-16', '2024-08-17', '2024-08-18', '2024-08-19', '2024-08-20', 
+                    '2024-08-21', '2024-08-22', '2024-08-23', '2024-08-24', '2024-08-25',
+                    '2024-08-26', '2024-08-27', '2024-08-28', '2024-08-29', '2024-08-30',
+                    '2024-08-31', '2024-09-01', '2024-09-02', '2024-09-03', '2024-09-04',
+                    '2024-09-05', '2024-09-06', '2024-09-07', '2024-09-08', '2024-09-09',
+                    '2024-09-10', '2024-09-11', '2024-09-12', '2024-09-13', '2024-09-14'
+                ];
+                const recentPrices = [
+                    1940, 1950, 1960, 1970, 1980, 1990, 2000, 2010, 2020, 2030,
+                    2040, 2050, 2060, 2070, 2080, 2090, 2100, 2110, 2120, 2130,
+                    2140, 2150, 2160, 2170, 2180, 2190, 2200, 2210, 2220, 2230
+                ];
 
-                        rows.slice(-30).forEach(row => { // Get the last 30 days
-                            const columns = row.split(',');
-                            recentDates.push(columns[0]); // Date column
-                            recentPrices.push(parseFloat(columns[4])); // Closing price column
-                        });
+                // Combine recent data with predictions
+                const combinedDates = recentDates.concat(predictionDates);
+                const combinedPrices = recentPrices.concat(predictionPrices);
 
-                        // Combine recent data with predictions
-                        const combinedDates = recentDates.concat(predictionDates);
-                        const combinedPrices = recentPrices.concat(predictionPrices);
+                // Hide loading message and show chart
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('myChart').style.display = 'block';
 
-                        // Hide loading message and show chart
-                        document.getElementById('loadingMessage').style.display = 'none';
-                        document.getElementById('myChart').style.display = 'block';
-
-                        // Create the chart
-                        createChart(combinedDates, combinedPrices);
-                    })
-                    .catch(error => {
-                        console.error('Error fetching recent prices:', error);
-                        document.getElementById('loadingMessage').innerText = 'Failed to load recent prices.';
-                    });
+                // Create the chart
+                createChart(combinedDates, combinedPrices);
             })
             .catch(error => {
                 console.error('Error fetching predictions:', error);
