@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Price Predictions</title>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js Zoom Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #myChart {
+            width: 80%;
+            max-width: 800px;
+            margin: auto;
+        }
+        #loadingMessage {
+            font-size: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Gold Price Predictions</h1>
+    <div id="loadingMessage">Loading data, please wait...</div> <!-- Loading message -->
+    <canvas id="myChart" style="display: none;"></canvas> <!-- Chart initially hidden -->
+
+    <script>
+        // Function to create and display the chart
+        function createChart(dates, prices) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line', // Line chart
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Gold Price (USD)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        data: prices
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Price (USD)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            },
+                            zoom: {
+                                enabled: true,
+                                mode: 'xy'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Fetch predictions and update the chart
+        fetch('https://kiarashyz.pythonanywhere.com/api/get_predictions')
+            .then(response => response.json())
+            .then(data => {
+                const predictionDates = data.map(item => item.date.split(' ')[0]);
+                const predictionPrices = data.map(item => item.price);
+
+                // Fetch one month of recent gold prices from an API (e.g., Yahoo Finance) and combine with prediction data
+                fetch('https://query1.finance.yahoo.com/v7/finance/download/GC=F?period1=1672531200&period2=' + Math.floor(Date.now() / 1000) + '&interval=1d&events=history')
+                    .then(response => response.text())
+                    .then(csv => {
+                        const rows = csv.split('\n').slice(1); // Remove header
+                        const recentDates = [];
+                        const recentPrices = [];
+
+                        rows.slice(-30).forEach(row => { // Get the last 30 days
+                            const columns = row.split(',');
+                            recentDates.push(columns[0]); // Date column
+                            recentPrices.push(parseFloat(columns[4])); // Closing price column
+                        });
+
+                        // Combine recent data with predictions
+                        const combinedDates = recentDates.concat(predictionDates);
+                        const combinedPrices = recentPrices.concat(predictionPrices);
+
+                        // Hide loading message and show chart
+                        document.getElementById('loadingMessage').style.display = 'none';
+                        document.getElementById('myChart').style.display = 'block';
+
+                        // Create the chart
+                        createChart(combinedDates, combinedPrices);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching recent prices:', error);
+                        document.getElementById('loadingMessage').innerText = 'Failed to load recent prices.';
+                    });
+            })
+            .catch(error => {
+                console.error('Error fetching predictions:', error);
+                document.getElementById('loadingMessage').innerText = 'Failed to load predictions.';
+            });
+    </script>
+
+</body>
+</html>
