@@ -28,7 +28,7 @@
         async function fetchAndDisplayData() {
             try {
                 // Fetch data from your Flask API
-                const response = await fetch('http://kiarashyz.pythonanywhere.com/api/get_predictions');
+                const response = await fetch('https://kiarashyz.pythonanywhere.com/api/get_predictions');
                 const data = await response.json();
 
                 // Check if there is an error in the response
