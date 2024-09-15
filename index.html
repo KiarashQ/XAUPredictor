@@ -29,6 +29,50 @@
             font-size: 1.5em;
             z-index: 10;
         }
+        /* Animation for loading screen dots */
+        .dots {
+            display: inline-block;
+            position: relative;
+            width: 50px;
+            height: 20px;
+        }
+        .dots div {
+            position: absolute;
+            top: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: black;
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+        .dots div:nth-child(1) {
+            left: 8px;
+            animation: dots1 0.6s infinite;
+        }
+        .dots div:nth-child(2) {
+            left: 16px;
+            animation: dots2 0.6s infinite;
+        }
+        .dots div:nth-child(3) {
+            left: 24px;
+            animation: dots2 0.6s infinite;
+        }
+        .dots div:nth-child(4) {
+            left: 32px;
+            animation: dots3 0.6s infinite;
+        }
+        @keyframes dots1 {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        @keyframes dots2 {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(8px, 0); }
+        }
+        @keyframes dots3 {
+            0% { transform: scale(1); }
+            100% { transform: scale(0); }
+        }
     </style>
 </head>
 <body>
@@ -36,7 +80,14 @@
     <div id="chart-container">
         <canvas id="goldPriceChart"></canvas>
     </div>
-    <div id="loading-screen">Loading data...</div>
+    <div id="loading-screen">
+        Loading<span class="dots">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </span>
+    </div>
 
     <script>
         // Fetch data from the API and create the chart
@@ -60,7 +111,7 @@
                 // Prepare data for the chart
                 const labels = historicalPrices.map(item => item.date).concat(predictions.map(item => item.date));
                 const historicalData = historicalPrices.map(item => item.price);
-                const predictedData = new Array(historicalPrices.length).fill(null).concat(predictions.map(item => item.price));
+                const predictedData = [historicalData[historicalData.length - 1]].concat(predictions.map(item => item.price)); // Connect the two datasets
 
                 // Create the chart
                 const ctx = document.getElementById('goldPriceChart').getContext('2d');
@@ -80,7 +131,7 @@
                             },
                             {
                                 label: 'Predicted Prices (USD)',
-                                data: predictedData,
+                                data: new Array(historicalData.length - 1).fill(null).concat(predictedData), // Fill the gap between historical and predicted data
                                 borderColor: 'rgba(255, 99, 132, 1)',
                                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                                 borderWidth: 1,
