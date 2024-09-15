@@ -16,7 +16,7 @@
             margin: auto;
         }
         #loading-screen {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -36,13 +36,15 @@
     <div id="chart-container">
         <canvas id="goldPriceChart"></canvas>
     </div>
+    <div id="loading-screen">Loading data...</div>
 
     <script>
         // Fetch data from the API and create the chart
         async function fetchAndDisplayData() {
+            const loadingScreen = document.getElementById('loading-screen');
             try {
                 // Fetch data from your Flask API
-                const response = await fetch('https://kiarashyz.pythonanywhere.com//api/get_predictions');
+                const response = await fetch('https://kiarashyz.pythonanywhere.com/api/get_predictions');
                 const data = await response.json();
 
                 // Check if there is an error in the response
@@ -58,10 +60,7 @@
                 // Prepare data for the chart
                 const labels = historicalPrices.map(item => item.date).concat(predictions.map(item => item.date));
                 const historicalData = historicalPrices.map(item => item.price);
-                const predictedData = predictions.map(item => item.price);
-
-                // Create a combined data set for the chart
-                const allData = historicalData.concat(predictedData);
+                const predictedData = new Array(historicalPrices.length).fill(null).concat(predictions.map(item => item.price));
 
                 // Create the chart
                 const ctx = document.getElementById('goldPriceChart').getContext('2d');
@@ -69,15 +68,27 @@
                     type: 'line',
                     data: {
                         labels: labels,
-                        datasets: [{
-                            label: 'Gold Price (USD)',
-                            data: allData,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderWidth: 1,
-                            fill: true,
-                            pointRadius: 0
-                        }]
+                        datasets: [
+                            {
+                                label: 'Historical Prices (USD)',
+                                data: historicalData,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderWidth: 1,
+                                fill: true,
+                                pointRadius: 0
+                            },
+                            {
+                                label: 'Predicted Prices (USD)',
+                                data: predictedData,
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderWidth: 1,
+                                fill: true,
+                                pointRadius: 0,
+                                borderDash: [5, 5] // Optional: make the predicted line dashed
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
@@ -116,10 +127,12 @@
                         }
                     }
                 });
+
                 // Hide the loading screen once the data is displayed
                 loadingScreen.style.display = 'none';
             } catch (error) {
                 console.error('Error fetching or displaying data:', error);
+                loadingScreen.textContent = 'Failed to load data.';
             }
         }
 
